@@ -1,0 +1,36 @@
+seed: 2026
+
+paths:
+  raw: data/raw/1000g
+  interim: data/interim
+  processed: data/processed
+  results: results
+
+populations:
+  P1: [YRI, LWK, GWD, MSL, ESN]
+  P2: [YRI, LWK, GWD, MSL, ESN, ACB, ASW]
+  P3: all
+
+cv:
+  outer_folds: 5
+  inner_folds: 3
+  n_bootstrap: 2000
+
+qc:
+  maf_threshold: 0.01
+  call_rate_threshold: 0.98
+  hwe_p_report: 1.0e-6
+
+ancestry_pcs:
+  chrom: 22
+  maf_min: 0.05
+  ld_r2: 0.2
+  n_pcs: 10
+
+liability_h2_sweep: [0.1, 0.2, 0.35, 0.5, 0.6]
+
+benchmark:
+  n_samples: [100, 500, 1000, 2504]
+  m_variants: [panel, 10000, 100000, full_chr22]
+  repeats: 3
+  min_free_disk_gb_factor: 2.0

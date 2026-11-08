@@ -1,0 +1,15 @@
+# S3-compatible object store for the raw VCF landing zone.
+# Image and credentials come from .env (never commit .env).
+services:
+  objectstore:
+    image: ${S3_IMAGE}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - "${OBJECT_STORE_DIR}:/data"
+    restart: unless-stopped

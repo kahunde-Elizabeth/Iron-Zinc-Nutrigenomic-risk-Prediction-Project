@@ -1,0 +1,29 @@
+# Random-teacher rules and the sealed blind challenge. EVERYTHING here is an ASSUMPTION about how simulated labels are
+# made. Grids, cv and the hand-built generator settings (random_rules) come from configs/randomized_study.yaml; this file
+# only adds the two new rule sources. Genotypes are real (1000 Genomes P1); covariates, rules and labels are simulated.
+
+# ---------------------------------------------------------------- random teachers (script 26)
+# A teacher is a randomly initialised network ("mlp") or ensemble of random decision trees ("trees") that reads a random
+# subset of SNPs and covariates. Nobody chooses its shape; how additive it is gets measured afterwards (linear_r2).
+teacher_rules:
+  n_rules: 30
+  family_probs: {mlp: 0.5, trees: 0.5}
+  signal_share: [0.35, 0.70]           # share of liability variance that is signal (rest is noise)
+  n_snps: [3, 8]
+  n_env_terms: [3, 7]                  # number of covariates the teacher reads
+  mlp:
+    hidden_layers: [1, 2]
+    width: [4, 16]
+    gain: [1.0, 2.5]                   # larger = more strongly non-linear
+    activations: [tanh, relu]
+  trees:
+    n_trees: [5, 15]
+    depth: [2, 3]
+  prevalence: [0.15, 0.35]
+  label_noise: [0.0, 0.05]
+
+# ---------------------------------------------------------------- sealed blind challenge (script 25)
+blind:
+  n_challenges: 10
+  test_fraction: 0.30                  # locked split: used only after the model choice is written down
+  family_probs: {mlp: 0.35, trees: 0.35, generator: 0.30}   # generator = the hand-built rule family from the main study

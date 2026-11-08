@@ -1,0 +1,45 @@
+# Scenario definitions for the SIMULATED labels. Genotypes are real (1000 Genomes P1); labels are not measured.
+# risk alleles come from configs/snp_panel.yaml; nothing here is a validated clinical risk score.
+
+features:            # SNPs given to the models as raw 0/1/2 genotype counts (direction not needed)
+  - rs855791
+  - rs4820268
+  - rs3811647
+  - rs1799852
+  - rs1800629
+  - rs11568350
+  - rs13419724
+  - rs114992984
+  - rs76182486
+  - rs13266634
+  - rs4854748        # added from Muriuki 2025 (TF, African children)
+  - rs2905094        # added from Muriuki 2025 (GTF3C5, East Africa); needs chr9 in the store
+  - rs73596248       # added from Muriuki 2025 (hepcidin locus); feature only, direction ambiguous
+
+excluded_from_features:
+  rs11558471: "r2 = 0.97 with rs13266634 in P1 (duplicate signal)"
+  rs1800562:  "monomorphic in P1 (no carriers)"
+  rs1799945:  "only 5 minor alleles in P1"
+
+scenarios:
+  evidence_only:                       # human-association evidence, all nominal; zinc is not modelled from genotype
+    iron: {rs4820268: G, rs3811647: A, rs1800629: A}
+    zinc: {}
+  evidence_plus_functional:            # adds cell-experiment evidence for zinc, labelled as hypothesis
+    iron: {rs4820268: G, rs3811647: A, rs1800629: A}
+    zinc: {rs114992984: A, rs76182486: T}
+
+  african_gwas:                        # genome-wide-significant transferrin / iron-deficiency loci in African children (Muriuki 2025 preprint, not peer reviewed)
+    iron: {rs3811647: A, rs4854748: C, rs1799852: C, rs2905094: C}   # risk = transferrin-raising / lower-iron allele; transferrin is a PROXY for iron status
+    zinc: {}
+    weights:                           # |beta| in SD of inverse-normal transformed transferrin: same scale across these SNPs
+      iron: {rs3811647: 0.22, rs4854748: 0.24, rs1799852: 0.36, rs2905094: 0.23}
+
+weight_scheme: equal                   # applies to every scenario WITHOUT a weights block                   # ASSUMPTION: the evidence SNPs measure different traits (Hb, TSAT, ferritin, cell zinc), so no common effect scale exists
+
+simulation:                            # label = top `prevalence` fraction of liability L = sqrt(h2)*z(score) + sqrt(1-h2)*noise
+  seed: 42
+  prevalence: [0.2, 0.3]               # 20% main, 30% sensitivity (assumptions, not measured prevalence)
+  h2: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]   # share of liability variance given to the SNP score (simulation parameter)
+  label_noise: [0.0, 0.05, 0.10]       # fraction of labels flipped at random afterwards
+  reporting_default: {prevalence: 0.2, h2: 0.3, label_noise: 0.0}   # ASSUMPTION for headline numbers; always show the sweep too

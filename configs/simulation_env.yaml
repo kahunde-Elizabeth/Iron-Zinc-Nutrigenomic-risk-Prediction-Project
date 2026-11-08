@@ -1,0 +1,42 @@
+# Synthetic NON-genetic factors and variance shares for the "genes + environment" simulation.
+# EVERYTHING here is an ASSUMPTION chosen to be plausible in direction; none of it is fitted to data.
+# The genotypes (1000 Genomes P1) are real; the covariates, coefficients and labels are invented.
+# Real SNPs explain only a few percent of iron/zinc variation (the African GWAS lead SNP: ~1.4% of transferrin),
+# so shares of 0.2-0.4 are deliberately LARGER than reality, to give algorithms something to find.
+
+seed: 2026
+cohort:                     # synthetic role assigned to each (adult) 1000 Genomes sample; a modelling device only
+  p_child: 0.5              # children 6-59 months; the rest are women 15-49
+  p_pregnant_woman: 0.10
+  p_heavy_menses: 0.20
+  p_hookworm: 0.15
+  p_malaria: {child: 0.25, woman: 0.15}
+  p_inflammation_base: 0.15       # plus 0.35 if malaria
+  p_diarrhoea: {child: 0.20, woman: 0.05}
+  diet_zinc_corr_with_iron: 0.5
+
+# risk-increasing coefficients on standardised covariates (qualitative direction from general nutrition knowledge)
+env_coefficients:
+  iron:
+    young_child: 0.6        # child under 24 months
+    pregnant: 0.8
+    blood_loss: 0.7         # hookworm or heavy menses
+    malaria: 0.5
+    inflammation: 0.4
+    diet_iron: -0.6         # richer diet lowers risk
+  zinc:
+    young_child: 0.3
+    pregnant: 0.5
+    diarrhoea: 0.7
+    inflammation: 0.3
+    malaria: 0.2
+    diet_zinc: -0.7
+
+# liability = sqrt(h_g)*z(genetic) + sqrt(h_ge)*z(genetic x inflammation) + sqrt(h_env)*z(environment) + residual
+variance_shares:
+  h_env: 0.30
+  h_g: [0.05, 0.20, 0.40]   # genetic additive share; 0.05 is nearest to the literature, 0.2-0.4 are generous
+  h_ge: [0.0, 0.10]         # gene x inflammation interaction (non-additive); 0.0 = purely additive
+prevalence: [0.2, 0.3]
+label_noise: [0.0, 0.05]
+reporting_default: {prevalence: 0.2, h_g: 0.2, h_ge: 0.1, label_noise: 0.0}

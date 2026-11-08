@@ -1,0 +1,94 @@
+# Randomized-rule study + scenario grid. EVERYTHING here is an ASSUMPTION about how simulated labels are made.
+# Genotypes are real (1000 Genomes P1); covariates, rules and labels are simulated. No result from this study is a
+# measured deficiency prediction. The point is to stop one hand-written rule from deciding which algorithm "wins":
+# many random rules are drawn, every algorithm is tuned fairly on each, and results are reported as averages and
+# win rates over the rules.
+
+seed: 42
+
+# ---------------------------------------------------------------- fair tuning
+cv:
+  outer_splits: 5          # honest estimate: tuning happens ONLY inside each outer training fold (nested CV)
+  inner_splits: 3
+grids:                     # small, equal-effort grids; every algorithm gets one
+  logreg:            {C: [0.01, 0.1, 1.0, 10.0]}
+  random_forest:     {min_samples_leaf: [1, 3, 8], max_features: [sqrt, 0.5]}
+  gradient_boosting: {n_estimators: [60, 150], learning_rate: [0.05, 0.1], max_depth: [2, 3]}
+  svm_rbf:           {C: [0.3, 1.0, 3.0, 10.0], gamma: [scale, 0.01, 0.1]}
+quick_grids:               # used with --quick (smaller; for a fast check)
+  logreg:            {C: [0.1, 1.0]}
+  random_forest:     {min_samples_leaf: [3], max_features: [sqrt, 0.5]}
+  gradient_boosting: {n_estimators: [100], learning_rate: [0.1], max_depth: [2, 3]}
+  svm_rbf:           {C: [1.0, 10.0], gamma: [scale]}
+
+# ---------------------------------------------------------------- random rules
+random_rules:
+  n_rules: 60
+  signal_share: [0.35, 0.70]            # share of liability variance that is signal (rest is noise)
+  nonadditive_fraction: [0.0, 0.80]     # share of the SIGNAL that is non-additive (0 = purely additive rule)
+  genetic_fraction_of_additive: [0.10, 0.50]   # genetic share of the additive part (rest is environment)
+  n_snps: [3, 8]
+  snp_coding_probs: {additive: 0.6, dominant: 0.2, recessive: 0.2}
+  n_env_terms: [3, 7]
+  env_coef_abs: [0.3, 1.0]
+  n_nonadd_terms: [1, 3]
+  nonadd_type_probs: {gxe: 0.35, gxg: 0.15, exe_and: 0.30, gthresh: 0.20}
+  prevalence: [0.15, 0.35]
+  label_noise: [0.0, 0.05]
+
+# ---------------------------------------------------------------- scenario grid (named SNP scenarios x structures)
+# Each structure splits one fixed signal share (0.6) between additive genes, additive environment and a
+# non-additive part. Terms: gscore_x = genetic score x covariate; exe_and = both covariates in their risk
+# direction at once; gthresh = only carriers above a genetic-score quantile are affected; gxg = SNP x SNP.
+# `a`/`b` may be a covariate name or {iron: name, zinc: name}.
+scenario_grid:
+  replicates: 3
+  prevalence: 0.2
+  label_noise: 0.0
+  structures:
+    additive:
+      h_g: 0.20
+      h_env: 0.40
+      h_nl: 0.00
+      terms: []
+    gxe:
+      h_g: 0.20
+      h_env: 0.30
+      h_nl: 0.10
+      terms:
+        - {type: gscore_x, cov: inflammation}
+    and_threshold:
+      h_g: 0.15
+      h_env: 0.25
+      h_nl: 0.20
+      terms:
+        - {type: exe_and, a: {iron: diet_iron, zinc: diet_zinc}, dir_a: -1, b: {iron: blood_loss, zinc: diarrhoea}, dir_b: 1}
+        - {type: gthresh, q: 0.7}
+    strong_nonadd:
+      h_g: 0.10
+      h_env: 0.20
+      h_nl: 0.30
+      terms:
+        - {type: gscore_x, cov: inflammation}
+        - {type: exe_and, a: {iron: diet_iron, zinc: diet_zinc}, dir_a: -1, b: malaria, dir_b: 1}
+        - {type: gthresh, q: 0.7}
+        - {type: gxg}
+
+# ---------------------------------------------------------------- stress test (script 24)
+# Rules that are 80-100% non-additive, built ONLY from pure interactions (products of two standardised variables),
+# and with the non-additive part orthogonalised against every SNP and covariate, so a linear model can get no signal
+# from it. If logistic regression still ties the flexible models here, additiveness is not what drives the main result.
+stress_test:
+  n_rules: 30
+  orthogonalise: true
+  signal_share: [0.35, 0.70]
+  nonadditive_fraction: [0.80, 1.00]
+  genetic_fraction_of_additive: [0.10, 0.50]
+  n_snps: [3, 8]
+  snp_coding_probs: {additive: 0.6, dominant: 0.2, recessive: 0.2}
+  n_env_terms: [3, 7]
+  env_coef_abs: [0.3, 1.0]
+  n_nonadd_terms: [2, 4]
+  nonadd_type_probs: {gxe: 0.5, gxg_prod: 0.2, exe_prod: 0.3}
+  prevalence: [0.15, 0.35]
+  label_noise: [0.0, 0.05]
